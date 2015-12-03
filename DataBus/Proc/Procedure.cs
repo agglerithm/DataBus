@@ -3,37 +3,36 @@ using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Linq.Expressions;
+using DataBus.Data;
 using DataBus.Proc; 
 
 namespace Paymetric.Proc
 {
     public class Procedure<P, E> :  IExecutable<P,E> where E : new()
     { 
-        private readonly IConnectionContext _session;
-
-
  
-
 
         //            public SessionProcedure(QueryProvider provider, Expression expression) : base(provider, expression)
         //            {
         //            }
-        public int Execute(P parameters)
+        public int Execute(P parameters, IDataContext session)
         {
             Parameters = parameters;
-            return (int) callNonQuery();
+            return (int) callNonQuery(session);
         }
 
-        private int callNonQuery()
+        private int callNonQuery(IDataContext session)
         {
-            var command = buildCommand(_session, Parameters);
+            var command = buildCommand(session, Parameters);
             int retVal = 0;
-            _session.WithinConnectionTransaction<E>(s =>
+            session.WithinTransaction(
+            ()
+        =>
                 retVal = command.ExecuteNonQuery());
             return retVal;
         }
 
-        private IDbCommand buildCommand(IConnectionContext connection, P parameters)
+        private IDbCommand buildCommand(IDataContext connection, P parameters)
         {
             var cmd = connection.CreateCommand();
             cmd.CommandType = CommandType.StoredProcedure;
@@ -52,15 +51,15 @@ namespace Paymetric.Proc
             return props.ToList().Select(p => p.GetInputParameter(parameters));
         }
 
-        public IEnumerable<E> ExecuteQuery(P parameters)
+        public IEnumerable<E> ExecuteQuery(P parameters, IDataContext session)
         {
             ReturnsRecords = true;
             Parameters = parameters;
             IEnumerable<E> retVal = null;
-            _session.WithinConnectionContext<E>(
-                s =>
+            session.WithinTransaction(
+                () =>
                 {
-                    var reader = buildCommand(_session, parameters).ExecuteReader();
+                    var reader = buildCommand(session, parameters).ExecuteReader();
                     retVal = reader.IsClosed ? new List<E>() : mapList(reader).ToList();
                 });
             return retVal;
@@ -99,19 +98,19 @@ namespace Paymetric.Proc
         public bool ReturnsRecords { get; private set; }
         public Expression Definition { get { return Expression.Constant(typeof (P)); }}
  
-        int IExecutable<P, E>.Execute(P parameters)
+        int IExecutable<P, E>.Execute(P parameters, IDataContext session)
         {
-            return Execute(parameters);
+            return Execute(parameters, session);
         }
 
-        E IExecutable<P, E>.ExecuteScalar(P parameters)
+        E IExecutable<P, E>.ExecuteScalar(P parameters, IDataContext session)
         {
-            return callScalar(parameters);
+            return callScalar(parameters, session);
         }
 
-        private E callScalar(P parameters)
+        private E callScalar(P parameters, IDataContext session)
         {
-            var command = buildCommand(_session, parameters);
+            var command = buildCommand(session, parameters);
             return mapScalar(command.ExecuteReader());
         }
 
@@ -254,10 +253,5 @@ namespace Paymetric.Proc
         }
     }
 
-    internal interface IConnectionContext
-    {
-        void WithinConnectionTransaction<T>(Func<T, int> func);
-        void WithinConnectionContext<T>(Action<T> action);
-        IDbCommand CreateCommand();
-    }
+
 }
