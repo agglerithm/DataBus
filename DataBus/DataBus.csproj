@@ -45,10 +45,14 @@
     <Compile Include="Data\DataContext.cs" />
     <Compile Include="Data\Entities\DataBusChannel.cs" />
     <Compile Include="DataBusMsg.cs" />
+    <Compile Include="Data\Entities\Endpoint.cs" />
+    <Compile Include="Data\Entities\Message.cs" />
     <Compile Include="Data\Entities\MessageQueueItem.cs" />
-    <Compile Include="Data\Entities\Publication.cs" />
+    <Compile Include="Data\Entities\MessageStatus.cs" />
+    <Compile Include="Data\Entities\MessageType.cs" />
+    <Compile Include="Data\Entities\NamedEntity.cs" />
+    <Compile Include="Data\Entities\Publisher.cs" />
     <Compile Include="Data\Entities\Subscriber.cs" />
-    <Compile Include="Data\Entities\Subscription.cs" />
     <Compile Include="Data\Commands\IDataCommand.cs" />
     <Compile Include="Data\Commands\IDataCommandExecutor.cs" />
     <Compile Include="Data\Commands\ISubscriberCommandExecutor.cs" />
